@@ -1,0 +1,49 @@
+
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[])
+{
+	if(argc != 3) {	//argv第一个参数为自身文件名，因此需要再指定两个文件
+		printf("error\n");
+		exit(1);	//使用exit()需要包含头文件<stdlib.h>
+	}
+	//打开文件
+	int fd_from = open(argv[1], O_RDONLY);	//第二个参数为copy的源文件
+	if(-1 == fd_from) {
+		perror("open1");
+		exit(2);
+	}
+	int fd_to = open(argv[2], O_WRONLY | O_CREAT, S_IRWXU);	//第三个参数为copy的目标文件
+	if(-1 == fd_to) {
+		perror("open2");
+		exit(3);
+	}
+	
+	char buff[128] = {0};
+	ssize_t ret;
+	while(1) {	//每次读写128个字节，直到文件结束
+		ret = read(fd_from, buff, sizeof(buff) - 1);
+		if(-1 == ret) {
+			perror("read");
+		}
+		else if(0 == ret) {	//read()返回0则文件结束了
+			printf("finish copy\n");
+			break;	
+		}
+		ret = write(fd_to, buff, ret);
+		if(-1 == ret) {
+			perror("write");
+		}
+	}
+	//关闭文件
+	close(fd_from);
+	close(fd_to);
+	return 0;
+}
+
